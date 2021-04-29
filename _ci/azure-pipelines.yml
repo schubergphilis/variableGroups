@@ -1,0 +1,46 @@
+name: $(date:yyyy.M.d)-$(Build.SourceBranchName)-$(date:HHmm)
+
+trigger:
+  branches:
+    include:
+      - "*"
+
+variables:
+- name: definitionPath
+  value: $(System.DefaultWorkingdirectory)/variableGroups/definitions
+
+stages:
+  - template: stages/azDoVariableGroupDeployment.yml
+    parameters:
+      definitionFile: $(definitionPath)/env/dev001.json
+      agentPool: hosted-dev000-pool
+      environment: dev001
+      connectedServiceName: azure-dev001-sub-spn
+
+  - template: stages/azDoVariableGroupDeployment.yml
+    parameters:
+      definitionFile: $(definitionPath)/env/tst001.json
+      agentPool: hosted-tst000-pool
+      environment: tst001
+      connectedServiceName: azure-tst001-sub-spn
+
+  - template: stages/azDoVariableGroupDeployment.yml
+    parameters:
+      definitionFile: $(definitionPath)/env/acc001.json
+      agentPool: hosted-acc000-pool
+      environment: acc001
+      connectedServiceName: azure-acc001-sub-spn
+
+  - template: stages/azDoVariableGroupDeployment.yml
+    parameters:
+      definitionFile: $(definitionPath)/env/prd001.json
+      agentPool: hosted-prd000-pool
+      environment: prd001
+      connectedServiceName: azure-prd001-sub-spn
+
+  - template: stages/azDoVariableGroupDeployment.yml
+    parameters:
+      definitionFile: $(definitionPath)/azuren.json
+      agentPool: hosted-prd000-pool
+      environment: generic
+      connectedServiceName: azure-prd001-sub-spn

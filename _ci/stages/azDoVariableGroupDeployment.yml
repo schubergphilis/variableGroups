@@ -1,0 +1,70 @@
+parameters:
+- name: definitionFile
+  type: string
+
+- name: agentPool
+  type: string
+  default: ''
+
+- name: environment
+  type: string
+
+- name: connectedServiceName
+  type: string
+
+stages:
+  - stage: ${{ format('Deploy_{0}', parameters.environment )}}
+    jobs:
+      - job: VariableGroups
+        pool:
+          ${{ if eq(parameters.agentPool, '') }}:
+            vmImage: windows-latest
+          ${{ if ne(parameters.agentPool, '') }}:
+            name: ${{ parameters.agentPool }}
+        steps:
+        - pwsh: Import-Module 
+        - task: NodeTool@0
+          inputs:
+            versionSpec: 14.x
+            checkLatest: true
+          displayName: Install NodeJS 14
+        
+        - task: Npm@1
+          displayName: Install NPM Packages
+          inputs:
+            command: custom
+            customCommand: install find-duplicated-property-keys
+
+        - bash: node_modules/.bin/find-duplicated-property-keys -s "${{ parameters.definitionFile }}"
+          failOnStderr: true
+          displayName: Run NodeJS tests against JSON
+
+        - pwsh: |
+            $testJsonSchema = Test-JsonAgainstSchema -JsonFile "${{ parameters.definitionFile }}"
+              if ($testJsonSchema -eq $false) {
+                throw ('The file {0} schema cannot be validated. Terminatting!' -f "${{ parameters.definitionFile }}")
+              }
+          displayName: Test definition file against JSON Schema
+
+        - pwsh: Test-VariableGroupValidity -DefinitionPath "${{ parameters.definitionFile }}"
+          displayName: Test variable group definition validity
+
+        - task: AzurePowerShell@4
+          inputs:
+            azureSubscription: "${{ parameters.connectedServiceName }}"
+            scriptType: 'inlineScript'
+            inline: pwsh -Command {Switch-AzDoVariableSecret -DefinitionPath "${{ parameters.definitionFile }}"}
+            azurePowerShellVersion: 'latestVersion'
+          displayName: Convert KeyVault references to secrets
+
+        - task: PowerShell@2
+          condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+          displayName: Deploy Azure DevOps Variable Groups
+          inputs:
+            targetType: filePath
+            filePath: $(scriptsPath)/Publish-AzDoVariableGroups.ps1
+            arguments: >
+              -DevOpsOrganization argnl
+              -AuthToken $(System.AccessToken)
+              -DefinitionPath "${{ parameters.definitionFile }}"
+            pwsh: true
