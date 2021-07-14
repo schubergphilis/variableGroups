@@ -56,6 +56,12 @@ function New-AzDoVariableGroup {
             $restSplat.Uri = ('{0}/_apis/distributedtask/variablegroups/{1}?{2}' -f $baseUri, $fetchVariableGroup.id, $apiVersion)
             $restSplat.Method = 'Put'
         }
-        Invoke-RestMethod @restSplat
+        try {
+            [void](Invoke-RestMethod @restSplat)
+        }
+        catch {
+            Write-Host 'There was a problem with Azure Devops API Call'
+            throw $_
+        }
     }
 }

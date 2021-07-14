@@ -36,7 +36,6 @@ process {
                     New-AzDoVariableGroup @createVariableGroupSplat
                 }
                 else {
-                    write-host $variableGroup.name
                     New-AzDoVariableGroup @createVariableGroupSplat -Update:$true
                 }
             }

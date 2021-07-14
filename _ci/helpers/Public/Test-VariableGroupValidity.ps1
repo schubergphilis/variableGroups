@@ -39,23 +39,6 @@ function Test-VariableGroupValidity {
                 if ([string]::IsNullOrWhiteSpace($customObjectVariableProperties)) {
                     throw ('The variable group {0} does not contain any variables.' -f $variableGroup.name)
                 }
-                # Test resourceGroup-variables configuration
-                if ($variableGroup.name -like '*-resourceGroup-variables') {
-                    $serviceName = $variableGroup.name.split('-')[0]
-                    $resourceGroupValue = '$(serviceGroupShortName)-$(environmentName)-$(locationShort)-$(serviceName)-rsg'
-                    if ($variableGroup.name -ne $variableGroup.description) {
-                        throw ('The {0} resource group - variable group is missconfigured. The name and the description should match.' -f $variableGroup.name)
-                    }
-                    if ($variableGroup.variables.resourceGroupName.value -ne $resourceGroupValue) {
-                        throw ('The {0} resource group - variable group is missconfigured. The resource group variable should have a value of {1}.' -f $variableGroup.name, $resourceGroupValue)
-                    }
-                    if ($variableGroup.variables.serviceName.value -ne $serviceName) {
-                        throw ('The {0} resource group - variable group is missconfigured. The serviceName should have value of {0}.' -f $serviceName)
-                    }
-                    if ($variableGroup.name -notlike ('{0}*' -f $variableGroup.variables.serviceName.value)) {
-                        throw ('The {0} resource group - variable group is missconfigured. The service name and resource group name do not match.')
-                    }
-                }
                 # Test variable definition, it has to include value, issecret and isreadonly properties
                 $variableNames = ($variableGroup.variables | Get-Member | Where-Object { $_.MemberType -eq 'NoteProperty' }).Name
                 foreach ($variable in $variableNames) {
