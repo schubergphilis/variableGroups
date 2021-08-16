@@ -52,6 +52,7 @@ function Switch-AzDoVariableSecret {
             }
         }
         Write-Verbose 'Writing secrets inside the definition file' -Verbose
+        ### Apply file encryption 
         [void](ConvertTo-Json $jsonDefinition -Depth 100 | Out-File $DefinitionPath -Force)
     }
 }
